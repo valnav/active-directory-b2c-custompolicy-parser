@@ -37,22 +37,22 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Cpim.Cache, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Cpim.SocialIdpPolicy.1.0.775\lib\net452\Microsoft.Cpim.Cache.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Cpim.SocialIdpPolicy.1.0.780\lib\net452\Microsoft.Cpim.Cache.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Cpim.Common, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Cpim.SocialIdpPolicy.1.0.775\lib\net452\Microsoft.Cpim.Common.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Cpim.SocialIdpPolicy.1.0.780\lib\net452\Microsoft.Cpim.Common.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Cpim.Configuration, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Cpim.SocialIdpPolicy.1.0.775\lib\net452\Microsoft.Cpim.Configuration.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Cpim.SocialIdpPolicy.1.0.780\lib\net452\Microsoft.Cpim.Configuration.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Cpim.Data, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Cpim.SocialIdpPolicy.1.0.775\lib\net452\Microsoft.Cpim.Data.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Cpim.SocialIdpPolicy.1.0.780\lib\net452\Microsoft.Cpim.Data.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Cpim.Protocols, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Cpim.SocialIdpPolicy.1.0.775\lib\net452\Microsoft.Cpim.Protocols.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Cpim.SocialIdpPolicy.1.0.780\lib\net452\Microsoft.Cpim.Protocols.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Cpim.SocialIdpPolicy, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Cpim.SocialIdpPolicy.1.0.775\lib\net452\Microsoft.Cpim.SocialIdpPolicy.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Cpim.SocialIdpPolicy.1.0.780\lib\net452\Microsoft.Cpim.SocialIdpPolicy.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Graph, Version=1.14.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Graph.1.14.0-preview\lib\net45\Microsoft.Graph.dll</HintPath>
