@@ -25,6 +25,7 @@ namespace AADB2C.CustomPolicy.Parser.Client
                 Console.WriteLine("New Tenant Scenario : 0");
                 Console.WriteLine("Existing Tenant Scenario : 1");
                 Console.WriteLine("Existing Tenant of 1P Scenario : 2");
+                Console.WriteLine("Test Auth for all Scenarios : 3");
                 int choice = args != null && args.Length > 0 ? int.Parse(args[0]) : 0;
 
                 B2CClientParser client = new B2CClientParser();
