@@ -4,14 +4,13 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{442FE689-CBFB-416D-A05B-34A81B8E20F5}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <RootNamespace>AADB2C.CustomPolicy.Parser</RootNamespace>
-    <AssemblyName>b2c-custompolicy-parser</AssemblyName>
+    <ProjectGuid>{73EE5B25-E320-408B-B80A-F48AD27CDF77}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>AADB2C.CustomPolicy.Parser.Client</RootNamespace>
+    <AssemblyName>B2C-CustomPolicy-Parser-Client</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Deterministic>true</Deterministic>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -32,18 +31,15 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup>
-    <RunPostBuildEvent>OnOutputUpdated</RunPostBuildEvent>
-  </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject />
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Graph, Version=1.14.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Graph.1.14.0\lib\net45\Microsoft.Graph.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Graph.Core, Version=1.14.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Graph.Core.1.14.1\lib\net45\Microsoft.Graph.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Identity.Client, Version=3.0.4.0, Culture=neutral, PublicKeyToken=0a613f4dd989e8ae, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Identity.Client.3.0.4-preview\lib\net45\Microsoft.Identity.Client.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.12.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -52,6 +48,10 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.IdentityModel" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.Security.Cryptography.ProtectedData, Version=4.0.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Security.Cryptography.ProtectedData.4.5.0\lib\net461\System.Security.Cryptography.ProtectedData.dll</HintPath>
+    </Reference>
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -61,47 +61,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Constants.cs" />
-    <Compile Include="IEFParser.cs" />
-    <Compile Include="ObjectExtensions.cs" />
-    <Compile Include="PolicyTracker.cs" />
-    <Compile Include="ResourceHelper.cs" />
-    <Compile Include="TrustFrameworkKeyset.cs" />
-    <Compile Include="TrustFrameworkPolicy.cs">
-      <DependentUpon>TrustFrameworkPolicy.xsd</DependentUpon>
-    </Compile>
-    <Compile Include="CustomPolicyRestHelper.cs" />
+    <Compile Include="AuthenticationHelper.cs" />
+    <Compile Include="B2CClientParser.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TokenCacheHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
-    <None Include="TrustFrameworkPolicy.xsd">
-      <SubType>Designer</SubType>
-    </None>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Properties\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="TemplatePolicyBase.xml">
-      <SubType>Designer</SubType>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="TemplateTenantPolicy.xml" />
-    <EmbeddedResource Include="PasswordReset.xml" />
-    <EmbeddedResource Include="ProfileEdit.xml" />
-    <EmbeddedResource Include="ropc.xml" />
-    <EmbeddedResource Include="susi.xml" />
-    <EmbeddedResource Include="B2C_1A_B2CTrustFrameworkBaseV2.xml">
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <Content Include="userflow-fullhierarchy.xml" />
-    <EmbeddedResource Include="TemplatePolicyExtensions.xml" />
+    <ProjectReference Include="..\b2c-custompolicy-parser\b2c-custompolicy-parser.csproj">
+      <Project>{442fe689-cbfb-416d-a05b-34a81b8e20f5}</Project>
+      <Name>b2c-custompolicy-parser</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
-  </PropertyGroup>
 </Project>

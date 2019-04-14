@@ -1,0 +1,92 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<TrustFrameworkPolicy 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+  xmlns="http://schemas.microsoft.com/online/cpim/schemas/2013/06" 
+  PolicySchemaVersion="0.3.0.0" 
+  TenantId="yourtenant.onmicrosoft.com" 
+  PolicyId="TrustFrameworkExtensions" 
+  PublicPolicyUri="http://yourtenant.onmicrosoft.com/TrustFrameworkExtensions">
+  
+  <BasePolicy>
+    <TenantId>appcentertrust.onmicrosoft.com</TenantId>
+    <PolicyId>B2C_1A_B2CTrustFrameworkBaseV2</PolicyId>
+  </BasePolicy>
+ <BuildingBlocks>
+
+  </BuildingBlocks>
+  <ClaimsProviders>
+  <ClaimsProvider>
+    <DisplayName>Azure Active Directory</DisplayName>
+    <TechnicalProfiles>
+      <TechnicalProfile Id="AAD-Common">
+        <Metadata>
+          <Item Key="ClientId">extensionsapp_id</Item>
+          <Item Key="ApplicationObjectId">extensionsapp_object_id</Item>
+        </Metadata>
+      </TechnicalProfile>
+    </TechnicalProfiles>
+  </ClaimsProvider>
+ 
+    <ClaimsProvider>
+      <DisplayName>Local Account SignIn</DisplayName>
+      <TechnicalProfiles>
+        <TechnicalProfile Id="eSTS-Common">
+          <EnabledForUserJourneys>Always</EnabledForUserJourneys>
+        </TechnicalProfile>
+        <TechnicalProfile Id="eSTS-NonInteractive">
+          <EnabledForUserJourneys>Always</EnabledForUserJourneys>
+        </TechnicalProfile>
+        <TechnicalProfile Id="LocalAccountSignInWithEvoSts">
+          <EnabledForUserJourneys>Always</EnabledForUserJourneys>
+        </TechnicalProfile>
+        <TechnicalProfile Id="LocalAccountSignInWithEvoStsUsingLogonEmail">
+          <EnabledForUserJourneys>Always</EnabledForUserJourneys>
+        </TechnicalProfile>
+        <TechnicalProfile Id="LocalAccountSignInWithEvoStsUsingLogonName">
+          <EnabledForUserJourneys>Always</EnabledForUserJourneys>
+        </TechnicalProfile>
+      </TechnicalProfiles>
+    </ClaimsProvider>
+    <ClaimsProvider>
+      <DisplayName>Local Account</DisplayName>
+      <TechnicalProfiles>
+        <TechnicalProfile Id="LocalAccountDiscoveryUsingEmailAddress">
+          <EnabledForUserJourneys>Always</EnabledForUserJourneys>
+        </TechnicalProfile>
+        <TechnicalProfile Id="LocalAccountDiscoveryUsingUserNameAndValidateStrongAuthenticationEmailAddress">
+          <EnabledForUserJourneys>Never</EnabledForUserJourneys>
+        </TechnicalProfile>
+        <TechnicalProfile Id="LocalAccountSignUpWithLogonEmail">
+          <EnabledForUserJourneys>Always</EnabledForUserJourneys>
+        </TechnicalProfile>
+        <TechnicalProfile Id="LocalAccountSignUpWithLogonEmailV2">
+          <EnabledForUserJourneys>Always</EnabledForUserJourneys>
+        </TechnicalProfile>
+        <TechnicalProfile Id="LocalAccountSignUpWithLogonName">
+          <EnabledForUserJourneys>Never</EnabledForUserJourneys>
+        </TechnicalProfile>
+        <TechnicalProfile Id="LocalAccountSignUpWithLogonNameV2">
+          <EnabledForUserJourneys>Never</EnabledForUserJourneys>
+        </TechnicalProfile>
+        <TechnicalProfile Id="SelfAsserted-LocalAccountSignin-Email">
+          <EnabledForUserJourneys>Always</EnabledForUserJourneys>
+        </TechnicalProfile>
+        <TechnicalProfile Id="SelfAsserted-LocalAccountSignin-Username">
+          <EnabledForUserJourneys>Never</EnabledForUserJourneys>
+        </TechnicalProfile>
+        <TechnicalProfile Id="LocalAccountEmail-Common">
+          <EnabledForUserJourneys>Always</EnabledForUserJourneys>
+        </TechnicalProfile>
+        <TechnicalProfile Id="LocalAccountUsername-Common">
+          <EnabledForUserJourneys>Never</EnabledForUserJourneys>
+        </TechnicalProfile>
+      </TechnicalProfiles>
+    </ClaimsProvider>
+  </ClaimsProviders>
+
+    <UserJourneys>
+	
+	</UserJourneys>
+
+</TrustFrameworkPolicy>

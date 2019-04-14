@@ -1,0 +1,129 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<TrustFrameworkPolicy 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+  xmlns="http://schemas.microsoft.com/online/cpim/schemas/2013/06" 
+  PolicySchemaVersion="0.3.0.0" 
+  TenantId="yourtenant.onmicrosoft.com" 
+  PolicyId="TemplatePolicyExtensions" 
+  PublicPolicyUri="http://yourtenant.onmicrosoft.com/TemplatePolicyExtensions">
+  
+  <BasePolicy>
+    <TenantId>appcentertrust.onmicrosoft.com</TenantId>
+    <PolicyId>B2C_1A_B2CTrustFrameworkBaseV2</PolicyId>
+  </BasePolicy>
+ <BuildingBlocks>
+
+  </BuildingBlocks>
+
+  <ClaimsProviders>
+
+    <!--Facebook-->
+    <ClaimsProvider>
+      <DisplayName>Facebook</DisplayName>
+      <TechnicalProfiles>
+        <TechnicalProfile Id="Facebook-OAUTH">
+          <Metadata>
+            <Item Key="client_id">facebook_clientid</Item>
+          </Metadata>
+          <CryptographicKeys>
+            <Key Id="client_secret" StorageReferenceId="B2C_1A_FacebookSecret" />
+          </CryptographicKeys>
+        </TechnicalProfile>
+      </TechnicalProfiles>
+    </ClaimsProvider>
+    <!--Google-->
+    <ClaimsProvider>
+      <DisplayName>Google</DisplayName>
+      <TechnicalProfiles>
+        <TechnicalProfile Id="Google-OAUTH">
+          <Metadata>
+            <Item Key="client_id">google_clientid</Item>
+          </Metadata>
+          <CryptographicKeys>
+            <Key Id="client_secret" StorageReferenceId="B2C_1A_GoogleSecret" />
+          </CryptographicKeys>
+        </TechnicalProfile>
+      </TechnicalProfiles>
+    </ClaimsProvider>
+    <!--LinkedIn-->
+    <ClaimsProvider>
+      <DisplayName>LinkedIn</DisplayName>
+      <TechnicalProfiles>
+        <TechnicalProfile Id="LinkedIn-OAUTH">
+          <Metadata>
+            <Item Key="client_id">linkedin_clientid</Item>
+          </Metadata>
+          <CryptographicKeys>
+            <Key Id="client_secret" StorageReferenceId="B2C_1A_LinkedInSecret" />
+          </CryptographicKeys>
+        </TechnicalProfile>
+      </TechnicalProfiles>
+    </ClaimsProvider>
+    
+    <!--Microsoft Account-->
+    <ClaimsProvider>
+      <DisplayName>Microsoft Account</DisplayName>
+      <TechnicalProfiles>
+        <TechnicalProfile Id="MSA-OIDC">
+          <Metadata>
+            <Item Key="client_id">microsoftaccount_clientid</Item>
+          </Metadata>
+          <CryptographicKeys>
+            <Key Id="client_secret" StorageReferenceId="B2C_1A_MSASecret" />
+          </CryptographicKeys>
+        </TechnicalProfile>
+      </TechnicalProfiles>
+    </ClaimsProvider>
+    
+    <!--Github-->
+    <ClaimsProvider>
+      <DisplayName>GitHub</DisplayName>
+      <TechnicalProfiles>
+        <TechnicalProfile Id="GitHub-OAUTH2">
+          <Metadata>
+            <Item Key="client_id">github_clientid</Item>
+          </Metadata>
+          <CryptographicKeys>
+            <Key Id="client_secret" StorageReferenceId="B2C_1A_githubSecret" />
+          </CryptographicKeys>
+        </TechnicalProfile>
+      </TechnicalProfiles>
+    </ClaimsProvider>
+                
+            
+    <!--MFA is not required because enabled only if onclaimsexistence-->
+    <!--<ClaimsProvider>
+      <DisplayName>PhoneFactor</DisplayName>
+      <TechnicalProfiles>
+        <TechnicalProfile Id="PhoneFactor-Common">
+          <EnabledForUserJourneys>OnClaimsExistence</EnabledForUserJourneys>
+        </TechnicalProfile>
+      </TechnicalProfiles>
+    </ClaimsProvider>-->
+    <!--ROPC and LocalAccount is not required-->
+    <!--<ClaimsProvider>
+      <DisplayName>Local Account SignIn</DisplayName>
+      <TechnicalProfiles>
+        --><!--<TechnicalProfile Id="login-NonInteractive">
+        <Metadata>
+          <Item Key="client_id">yourclientid</Item>
+          <Item Key="IdTokenAudience">yourtokenaudience</Item>
+        </Metadata>
+      </TechnicalProfile>--><!--
+        <TechnicalProfile Id="ResourceOwnerPasswordCredentials-OAUTH2">
+          <Metadata>
+            <Item Key="client_id">yourclientid</Item>
+            <Item Key="resource_id">yourtokenaudience</Item>
+          </Metadata>
+        </TechnicalProfile>
+      </TechnicalProfiles>
+    </ClaimsProvider>-->
+
+  </ClaimsProviders>
+
+    <!--UserJourneys>
+	
+	</UserJourneys-->
+
+</TrustFrameworkPolicy>
