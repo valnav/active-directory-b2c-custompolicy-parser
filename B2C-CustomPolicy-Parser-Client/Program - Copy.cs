@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -6,12 +6,14 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using AADB2C.CustomPolicy.Parser;
 
-namespace aad_b2c_parse_trustframeworkpolicy
+namespace AADB2C.CustomPolicy.Parser.Client
 {
     public class Program
     {
-        static bool IsParse = false;
+        
+        static IEFParser iEFParser;
         static void Main(string[] args)
         {
             // validate parameters
@@ -24,74 +26,74 @@ namespace aad_b2c_parse_trustframeworkpolicy
             try
             {
                 // Login as global admin of the Azure AD B2C tenant
-                UserMode.LoginAsAdmin();
-
-                // Graph client does not yet support trustFrameworkPolicy, so using HttpClient to make rest calls
-                switch (args[0].ToUpper())
+                string token = AuthenticationHelper.LoginAsAdmin();
+                iEFParser = new IEFParser(Constants.Tenant, token);
+                if (!iEFParser.SetUpParserForTenant())
                 {
-                    case "LIST":
-                        // List all polcies using "GET /trustFrameworkPolicies"
-                        request = UserMode.HttpGet(Constants.TrustFrameworkPolicesUri);
-                        break;
-                    case "GET":
-                        // Get a specific policy using "GET /trustFrameworkPolicies/{id}"
-                        request = UserMode.HttpGetID(Constants.TrustFrameworkPolicyByIDUri, args[1]);
-                        break;
-                    case "CREATE":
-                        // Create a policy using "POST /trustFrameworkPolicies" with XML in the body
-                        string xml = System.IO.File.ReadAllText(args[1]);
-                        request = UserMode.HttpPost(Constants.TrustFrameworkPolicesUri, xml);
-                        break;
-                    case "UPDATE":
-                        // Update using "PUT /trustFrameworkPolicies/{id}" with XML in the body
-                        xml = System.IO.File.ReadAllText(args[2]);
-                        request = UserMode.HttpPutID(Constants.TrustFrameworkPolicyByIDUri, args[1], xml);
-                        break;
-                    case "DELETE":
-                        // Delete using "DELETE /trustFrameworkPolicies/{id}"
-                        request = UserMode.HttpDeleteID(Constants.TrustFrameworkPolicyByIDUri, args[1]);
-                        break;
-                    case "PARSE":
-                        // Parse using "Get /trustFrameworkPolicies/{id} and then split the xml"
-                        IsParse = true;
-                        request = UserMode.Parse();
-                        break;
-                    //case "PARSE-IDP":
-                    //    // Delete using "DELETE /trustFrameworkPolicies/{id}"
-                    //    IsParse = true;
-                    //    request = UserMode.ParseIdp(Constants.TrustFrameworkPolicyByIDUri, args[1]);
-                    //    break;
-                    //case "PARSE-USERFLOWS":
-                    //    // Delete using "DELETE /trustFrameworkPolicies/{id}"
-                    //    IsParse = true;
-                    //    request = UserMode.ParseUserFlows(Constants.TrustFrameworkPolicyByIDUri, args[1]);
-                    //    break;
-
-                    default:
-                        return;
+                    throw new InvalidProgramException("setup parser failed");
                 }
+                TrustFrameworkPolicy tfp = null;
+                List<ClaimsProvider> claimsProviders = new List<ClaimsProvider>();
+                List<UserJourney> userJourneys = new List<UserJourney>();
 
-                
-                if(IsParse)
+                while (args[0].ToUpper() != "EXIT")
                 {
 
+
+                    // Graph client does not yet support trustFrameworkPolicy, so using HttpClient to make rest calls
+                    switch (args[0].ToUpper())
+                    {
+                        case "LIST":
+                            // List all polcies using "GET /trustFrameworkPolicies"
+                            var policies = iEFParser.PolicyIdsInTenant;
+                            break;
+                        case "GET":
+                            // Get a specific policy using "GET /trustFrameworkPolicies/{id}"
+                            var policy = iEFParser.GetPolicy(args[1]);
+                            break;
+                        case "CREATERP":
+                            // Create a policy using "POST /trustFrameworkPolicies" with XML in the body
+                            
+                            var ret = iEFParser.CreatePolicy(tfp);
+                            break;
+                        case "UPDATE":
+                            
+                            iEFParser.UpdatePolicy(tfp);
+                            break;
+                        case "DELETE":
+                            // Delete using "DELETE /trustFrameworkPolicies/{id}"
+                            iEFParser.DeletePolicy(tfp);
+                            break;
+                        case "PARSE":
+                            // Parse using "Get /trustFrameworkPolicies/{id} and then split the xml"
+                            claimsProviders = iEFParser.GetClaimsProviders();
+                            userJourneys = iEFParser.GetUserJourneys();
+
+                            break;
+                        case "PARSE-IDP":
+                            claimsProviders = iEFParser.GetClaimsProviders();
+                            break;
+                        case "PARSE-USERFLOWS":
+                            userJourneys = iEFParser.GetUserJourneys();
+                            break;
+
+                        default:
+                            return;
+                    }
+
+
+                    
                 }
-                else
-                {
-                    PrintRequest(request);
-                    string response = UserMode.ExtractResponse(request);
-                    Debug.WriteLine(response);
-                }
-                
             }
             catch (Exception e)
             {
                 PrintRequest(request);
                 Debug.WriteLine("\nError {0} {1}", e.Message, e.InnerException != null ? e.InnerException.Message : "");
             }
+
         }
 
-        
+
         public static bool CheckValidParameters(string[] args)
         {
             if (Constants.ClientIdForUserAuthn.Equals("ENTER_YOUR_CLIENT_ID") ||
@@ -123,6 +125,8 @@ namespace aad_b2c_parse_trustframeworkpolicy
             {
                 case "LIST":
                 case "PARSE":
+                case "PARSE-IDP":
+                case "PARSE-USERFLOWS":
                     break;
                 case "GET":
                     if (args.Length <= 1)
@@ -131,7 +135,7 @@ namespace aad_b2c_parse_trustframeworkpolicy
                         return false;
                     }
                     break;
-                case "CREATE":
+                case "CREATERP":
                     if (args.Length <= 1)
                     {
                         PrintHelp(args);
@@ -152,21 +156,6 @@ namespace aad_b2c_parse_trustframeworkpolicy
                         return false;
                     }
                     break;
-                //case "PARSE-IDP":
-                //    if (args.Length <= 1)
-                //    {
-                //        PrintHelp(args);
-                //        return false;
-                //    }
-                //    break;
-                //case "PARSE-USERFLOWS":
-                //    if (args.Length <= 1)
-                //    {
-                //        PrintHelp(args);
-                //        return false;
-                //    }
-                //    break;
-
                 case "HELP":
                     PrintHelp(args);
                     return false;
@@ -202,21 +191,19 @@ namespace aad_b2c_parse_trustframeworkpolicy
             Debug.WriteLine("- Square brackets indicate optional arguments");
             Debug.WriteLine("");
             Console.ForegroundColor = ConsoleColor.Cyan;
+            Debug.WriteLine("Exit                                 : {0} To exit", appName);
             Debug.WriteLine("List                                 : {0} List", appName);
             Debug.WriteLine("Get                                  : {0} Get [PolicyID]", appName);
             Debug.WriteLine("                                     : {0} Get B2C_1A_PolicyName", appName);
-            Debug.WriteLine("Create                               : {0} Create [RelativePathToXML]", appName);
-            Debug.WriteLine("                                     : {0} Create policytemplate.xml", appName);
+            Debug.WriteLine("CreateRP                             : {0} CreateRP [SuSi, EditProfile, PasswordReset, ROPC]", appName);
+            Debug.WriteLine("                                     : {0} CreateRP Susi", appName);
             Debug.WriteLine("Update                               : {0} Update [PolicyID] [RelativePathToXML]", appName);
             Debug.WriteLine("                                     : {0} Update B2C_1A_PolicyName updatepolicy.xml", appName);
             Debug.WriteLine("Delete                               : {0} Delete [PolicyID]", appName);
             Debug.WriteLine("                                     : {0} Delete B2C_1A_PolicyName", appName);
             Debug.WriteLine("Parse                                : {0} Parse ", appName);
-            //Debug.WriteLine("                                     : {0} Parse B2C_1A_PolicyName", appName);
-            //Debug.WriteLine("Parse-IDP                            : {0} Parse-IDP [PolicyID]", appName);
-            //Debug.WriteLine("                                     : {0} Parse-IDP B2C_1A_PolicyName", appName);
-            //Debug.WriteLine("Parse-UserFlows                      : {0} Parse-UserFlows [PolicyID]", appName);
-            //Debug.WriteLine("                                     : {0} Parse-UserFlows B2C_1A_PolicyName", appName);
+            Debug.WriteLine("Parse-IDP                            : {0} Parse-IDP ", appName);
+            Debug.WriteLine("Parse-UserFlows                      : {0} Parse-UserFlows", appName);
             Debug.WriteLine("Help                                 : {0} Help", appName);
             Console.ForegroundColor = ConsoleColor.White;
             Debug.WriteLine("");
@@ -227,7 +214,7 @@ namespace aad_b2c_parse_trustframeworkpolicy
                 Console.ReadKey();
             }
         }
-        
-    
-}
+
+
+    }
 }

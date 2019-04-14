@@ -5,6 +5,11 @@ VisualStudioVersion = 15.0.28307.421
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "b2c-custompolicy-parser", "b2c-custompolicy-parser\b2c-custompolicy-parser.csproj", "{442FE689-CBFB-416D-A05B-34A81B8E20F5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "B2C-CustomPolicy-Parser-Client", "B2C-CustomPolicy-Parser-Client\B2C-CustomPolicy-Parser-Client.csproj", "{73EE5B25-E320-408B-B80A-F48AD27CDF77}"
+	ProjectSection(ProjectDependencies) = postProject
+		{442FE689-CBFB-416D-A05B-34A81B8E20F5} = {442FE689-CBFB-416D-A05B-34A81B8E20F5}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +20,10 @@ Global
 		{442FE689-CBFB-416D-A05B-34A81B8E20F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{442FE689-CBFB-416D-A05B-34A81B8E20F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{442FE689-CBFB-416D-A05B-34A81B8E20F5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{73EE5B25-E320-408B-B80A-F48AD27CDF77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{73EE5B25-E320-408B-B80A-F48AD27CDF77}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{73EE5B25-E320-408B-B80A-F48AD27CDF77}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{73EE5B25-E320-408B-B80A-F48AD27CDF77}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
