@@ -19,6 +19,104 @@ namespace AADB2C.CustomPolicy.Parser
             Parser = parser;
         }
         public string TokenForUser { get; set; }
+
+
+        internal void LoadPolicies()
+        {
+            var request = HttpGet(Constants.TrustFrameworkPolicesUri);
+            string response;
+            if (!ExtractResponse(request, out response))
+                throw new InvalidOperationException(string.Format(" getting TFP from tenant failed with {0}", response));
+
+            var jo = JObject.Parse(response);
+            JArray policyIds = (JArray)jo["value"];
+            foreach (var item in policyIds.Children<JObject>())
+            {
+
+                LoadPolicy(item);
+            }
+        }
+        private void LoadPolicy(JObject item)
+        {
+            string propertyValue = (string)item.Property("id").Value;
+            var tfp = GetPolicy(propertyValue);
+            tfp.PolicyConstraints = new TrustFrameworkPolicyPolicyConstraints();
+            //skip adding the extension because it gets added in the if below
+            if (Parser.PolicyIdsInTenant.ContainsKey(propertyValue))
+            {
+                Debug.WriteLine("Should be the extensions that got added by one of the RPs {0}", propertyValue);
+
+            }
+            else if (tfp.BasePolicy != null && tfp.RelyingParty != null)
+            {
+                tfp.PolicyConstraints.IsExtension = false;
+                var parent = GetPolicy(tfp.BasePolicy?.PolicyId);
+                if (parent != null && parent.BasePolicy != null && !string.IsNullOrWhiteSpace(parent.BasePolicy.TenantId))
+                {
+                    if (parent.BasePolicy.TenantId.ToLower().Equals(Constants.TenantIdFor1P))
+                    {
+                        parent.PolicyConstraints.Is1POwned = true;
+                        parent.PolicyConstraints.IsExtension = true;
+                        tfp.PolicyConstraints.Is1POwned = true;
+                        Parser.TenantPolicyId = tfp.PolicyId;
+                        Parser.PolicyIdsInTenant[propertyValue] = parent;
+                        Debug.WriteLine(string.Format("1P Policy {0}'s base policy found {1}", tfp.PolicyId, tfp.BasePolicy?.PolicyId));
+                    }
+                    else
+                        Debug.WriteLine(string.Format("Customer owned Policy {0}'s base policy found {1}", tfp.PolicyId, tfp.BasePolicy?.PolicyId));
+
+                }
+                else
+                {
+                    Debug.WriteLine(string.Format("{0} base policy not found {1}", tfp.PolicyId, tfp.BasePolicy?.PolicyId));
+                }
+
+            }
+            else
+            {
+                Debug.WriteLine("existing tenant - this policy can be base or extensions not managed by app center - {0}", tfp.PolicyId);
+            }
+
+            Parser.PolicyIdsInTenant[propertyValue] = tfp;
+        }
+        internal void LoadKeysets()
+        {
+            HttpRequestMessage request = HttpGet(Constants.TrustFrameworkKeysetsUri);
+            string response;
+            if (!ExtractResponse(request, out response))
+            {
+                throw new InvalidOperationException(response);
+            }
+            var jo = JObject.Parse(response);
+            JArray jArray = (JArray)jo["value"];
+
+            foreach (var item in jArray.Children<JObject>())
+            {
+
+                LoadKeySetFromJson(item);
+
+            }
+        }
+
+        private void LoadKeySetFromJson(JObject item)
+        {
+            var id = item.Value<string>("id");
+            var request = HttpGetID(Constants.TrustFrameworkKeysetsUri, id);
+            string response;
+            if (!ExtractResponse(request, out response))
+            {
+                throw new InvalidOperationException(response);
+            }
+
+            var jo = JObject.Parse(response);
+            var jt = jo["value"];
+            var ks = TrustFrameworkKeyset.FromJson(jt.ToString());
+
+            Parser.KeySetsInTenant[id] = ks;
+        }
+
+
+
         private void AddHeaders(HttpRequestMessage requestMessage)
         {
             if (TokenForUser == null)

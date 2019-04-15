@@ -24,49 +24,69 @@ namespace AADB2C.CustomPolicy.Parser
 {
     public class IEFParser
     {
-
+        //property used for referencing the tenant id in policies
         internal string TenantId { get; set; }
 
+        //property used for referencing base policy id for the tenant
         public string BasePolicyId { get; internal set; }
 
+        //property for the extensions policy id for the tenant.
         public string TenantPolicyId { get; internal set; }
 
+        //Dictionary for ALL policy in the tenant
         public Dictionary<string, TrustFrameworkPolicy> PolicyIdsInTenant { get; internal set; }
-        public Dictionary<string, TrustFrameworkPolicy> TemplateRPsInTenant { get; internal set; }
+        //Dictionary for Keysets in the tenant
         public Dictionary<string, TrustFrameworkKeyset> KeySetsInTenant { get; internal set; }
-        public TrustFrameworkPolicy TemplateTenantPolicy { get; internal set; }
         public bool NewTenant { get; private set; }
 
         public List<ClaimsProvider> AllClaimProviders { get; internal set; }
         public List<UserJourney> AllUserJourneys { get; internal set; }
         //internal List<TrustFrameworkKeyset> AllKeysets { get; set; }
-        
 
+        //reference to the extensions policy template
+        public TrustFrameworkPolicy TemplateTenantPolicy { get; internal set; }
+
+        //Dictionary for all the Template RPs 
+        public Dictionary<string, TrustFrameworkPolicy> TemplateRPs { get; internal set; }
+        //Reference to the base policy template
         public TrustFrameworkPolicy TemplateBasePolicy { get; internal set; }
+        //reference to the extensions policy template
         public TrustFrameworkPolicy TemplatePolicyExtensions { get; internal set; }
 
+        //Helps for REST, Resource management and Change Tracking
         public CustomPolicyRestHelper PolicyRestHelper { get; private set; }
         public ResourceHelper Helper { get; private set; }
         public PolicyTracker ChangeTracker { get; private set; }
-       
+
+        //todo: can remove and make it a local variable.
         internal Stream xsdStream;
 
+        /*
+         * TenantId is used to setup the parser
+         * Token is used for invoking get/post/put on B2C resources
+         */
         public IEFParser(string tenantId, string token)
         {
             PolicyIdsInTenant = new Dictionary<string, TrustFrameworkPolicy>();
-            TemplateRPsInTenant = new Dictionary<string, TrustFrameworkPolicy>();
+            TemplateRPs = new Dictionary<string, TrustFrameworkPolicy>();
             KeySetsInTenant = new Dictionary<string, TrustFrameworkKeyset>();
-    
+
 
             AllClaimProviders = new List<ClaimsProvider>();
             AllUserJourneys = new List<UserJourney>();
-            
+
             PolicyRestHelper = new CustomPolicyRestHelper(this, token);
             Helper = new ResourceHelper(this);
             ChangeTracker = new PolicyTracker(this);
             TenantId = tenantId;
         }
 
+        /*
+         * The setup parser does the heavy lifting of initializing the parser 
+         * responsible for loading all the templates
+         * responsible for loading all the policys in the tenant
+         * responsible for creating the tenant policy if one doesnt exist - this happens for new tenants
+         */
         public bool SetUpParserForTenant()
         {
             bool ret = false;
@@ -74,58 +94,11 @@ namespace AADB2C.CustomPolicy.Parser
             try
             {
                 Helper.LoadEmbeddedResources();
-                HttpRequestMessage request = PolicyRestHelper.HttpGet(Constants.TrustFrameworkPolicesUri);
 
-                if (!PolicyRestHelper.ExtractResponse(request, out string response))
-                    throw new InvalidOperationException(string.Format(" getting TFP from tenant failed with {0}", response));
+                PolicyRestHelper.LoadPolicies();
 
-                JObject jo = JObject.Parse(response);
-                JArray policyIds = (JArray)jo["value"];
-                foreach (var item in policyIds.Children<JObject>())
-                {
-
-                    string propertyValue = (string)item.Property("id").Value;
-                    var tfp = PolicyRestHelper.GetPolicy(propertyValue);
-                    tfp.PolicyConstraints = new TrustFrameworkPolicyPolicyConstraints();
-                    //skip adding the extension because it gets added in the if below
-                    if (PolicyIdsInTenant.ContainsKey(propertyValue))
-                    {
-                        Debug.WriteLine("Should be the extensions that got added by one of the RPs {0}", propertyValue);
-                        continue;
-                    }
-                    if (tfp.BasePolicy != null && tfp.RelyingParty != null)
-                    {
-                        tfp.PolicyConstraints.IsExtension = false;
-                        var parent = PolicyRestHelper.GetPolicy(tfp.BasePolicy?.PolicyId);
-                        if (parent != null && parent.BasePolicy != null && !string.IsNullOrWhiteSpace(parent.BasePolicy.TenantId))
-                        {
-                            if (parent.BasePolicy.TenantId.ToLower().Equals(Constants.TenantIdFor1P))
-                            {
-                                parent.PolicyConstraints.Is1POwned = true;
-                                parent.PolicyConstraints.IsExtension = true;
-                                tfp.PolicyConstraints.Is1POwned = true;
-                                TenantPolicyId = tfp.PolicyId;
-                                PolicyIdsInTenant[propertyValue] = parent;
-                                Debug.WriteLine(string.Format("1P Policy {0}'s base policy found {1}", tfp.PolicyId, tfp.BasePolicy?.PolicyId));
-                            }
-                            else
-                                Debug.WriteLine(string.Format("Customer owned Policy {0}'s base policy found {1}", tfp.PolicyId, tfp.BasePolicy?.PolicyId));
-
-                        }
-                        else
-                            Debug.WriteLine(string.Format("{0} base policy not found {1}", tfp.PolicyId, tfp.BasePolicy?.PolicyId));
-
-
-                    }
-                    else
-                    {
-                        Debug.WriteLine("existing tenant - this policy can be base or extensions not managed by app center - {0}", tfp.PolicyId);
-                    }
-
-                    PolicyIdsInTenant[propertyValue] = tfp;
-                }
-
-                //assuming a 1p model. This will not be set this and instead load this xml as an embedded resource.
+                //todo: needs work to extend, if customer-owned base policy needs to be supported
+                //Assuming a 1p model. This will not be set this and instead load this xml as an embedded resource.
                 //so not looking for base in this tenant
 
                 if (string.IsNullOrEmpty(TenantPolicyId))
@@ -134,33 +107,10 @@ namespace AADB2C.CustomPolicy.Parser
                     if (!CreateTenantPolicy()) ret = false;
                 }
                 else
-
                 {
                     Debug.WriteLine("Extension exists and is called {0}", TenantPolicyId);
                 }
-                request = PolicyRestHelper.HttpGet(Constants.TrustFrameworkKeysetsUri);
-                if(!PolicyRestHelper.ExtractResponse(request, out response))
-                {
-                    throw new InvalidOperationException(response);
-                }
-                jo = JObject.Parse(response);
-                JArray jArray= (JArray)jo["value"];
-
-                foreach (var item in jArray.Children<JObject>())
-                {
-                    var id = item.Value<string>("id");
-                    request = PolicyRestHelper.HttpGetID(Constants.TrustFrameworkKeysetsUri, id);
-                    if (!PolicyRestHelper.ExtractResponse(request, out response))
-                    {
-                        throw new InvalidOperationException(response);
-                    }
-
-                    jo = JObject.Parse(response);
-                    var jt = jo["value"];
-                    var ks = TrustFrameworkKeyset.FromJson(jt.ToString());
-
-                    KeySetsInTenant[id] = ks;
-                }
+                PolicyRestHelper.LoadKeysets();
 
                 AllClaimProviders = GetClaimsProviders();
                 AllUserJourneys = GetUserJourneys();
@@ -170,22 +120,12 @@ namespace AADB2C.CustomPolicy.Parser
             catch (Exception ex)
             {
                 Debug.WriteLine(ex);
+                throw ex;
             }
             return ret;
 
         }
-
-
-        private ClaimsProviderSelection GetClaimsProviderSelection(ClaimsProviderSelection[] cPS, string name)
-        {
-            foreach (var item in cPS)
-            {
-                if (item.TargetClaimsExchangeId == name || item.ValidationClaimsExchangeId == name)
-                    return item;
-            }
-
-            return null;
-        }
+        
         //make changes to idps
         internal void FixupTenantPolicy()
         {
@@ -194,6 +134,7 @@ namespace AADB2C.CustomPolicy.Parser
                 throw new ArgumentNullException(string.Format("{0} not found", TenantPolicyId));
             //do nothing
         }
+
         /*
          * <ClaimsProviderSelections>
             <ClaimsProviderSelection TargetClaimsExchangeId="FacebookExchange"/>
@@ -265,67 +206,19 @@ namespace AADB2C.CustomPolicy.Parser
                 }
             }
         }
-        public List<UserJourney> GetUserJourneys()
-        {
-            List<UserJourney> userJourneys = new List<UserJourney>();
-
-            foreach (var item in PolicyIdsInTenant.Values)
-            {
-                //policyconstraints should never be null;
-                if (item.PolicyConstraints.Is1POwned)
-                {
-                    var tfp = item;
-                    if (tfp.UserJourneys != null && tfp.UserJourneys.Length > 0)
-                    {
-                        userJourneys.AddRange(tfp.UserJourneys);
-                        Debug.WriteLine("for policy ID {0} found following user journeys - ", tfp.PolicyId);
-                        foreach (var item2 in tfp.UserJourneys)
-                        {
-                            Debug.Write("{0}  ", item2.Id);
-                        }
-                        Debug.WriteLine("");
-                    }
-                }
-            }
-
-            return userJourneys;
-        }
-
-        public List<ClaimsProvider> GetClaimsProviders()
-        {
-            List<ClaimsProvider> claimsProviders = new List<ClaimsProvider>();
-
-            foreach (var item in PolicyIdsInTenant.Values)
-            {
-                //policyconstraints should never be null;
-                if (item.PolicyConstraints.Is1POwned)
-                {
-                    var tfp = item;
-
-                    if (tfp.ClaimsProviders != null && tfp.ClaimsProviders.Length > 0)
-                    {
-                        claimsProviders.AddRange(tfp.ClaimsProviders);
-                        Debug.WriteLine("for policy ID {0} found following claim providers - ", tfp.PolicyId);
-                        foreach (var item2 in tfp.ClaimsProviders)
-                        {
-                            Debug.Write("{0}  ", item2.DisplayName);
-                        }
-                        Debug.WriteLine("");
-                    }
-                }
-            }
-
-            return claimsProviders;
-        }
 
         private bool CreateTenantPolicy()
         {
             bool ret = true;
             var tfp = ObjectExtensions.Clone<TrustFrameworkPolicy>(TemplateTenantPolicy);
             //TrustFrameworkPolicy tfp = new TrustFrameworkPolicy();
-            tfp.BasePolicy = new BasePolicy();
-            tfp.BasePolicy.PolicyId = TemplateTenantPolicy.BasePolicy.PolicyId;
-            tfp.BasePolicy.TenantId = TemplateTenantPolicy.BasePolicy.TenantId;
+            var basePolicy = new BasePolicy
+            {
+                PolicyId = TemplateTenantPolicy.BasePolicy.PolicyId,
+                TenantId = TemplateTenantPolicy.BasePolicy.TenantId
+            };
+
+            tfp.BasePolicy = basePolicy;
             tfp.TenantId = TenantId;
             tfp.PolicyId = GetNameFromTemplate(TemplateTenantPolicy.PolicyId);
             tfp.PublicPolicyUri = "http://" + TenantId + "/" + tfp.PolicyId;
@@ -333,11 +226,13 @@ namespace AADB2C.CustomPolicy.Parser
             tfp.PolicySchemaVersion = "0.3.0.0";
             TenantPolicyId = tfp.PolicyId;
             tfp.BuildingBlocks = new BuildingBlocks();
-            tfp.PolicyConstraints = new TrustFrameworkPolicyPolicyConstraints();
-            tfp.PolicyConstraints.Is1POwned = true;
-            tfp.PolicyConstraints.IsExtension = true;
-
-
+            var policyConstraints = new TrustFrameworkPolicyPolicyConstraints
+            {
+                Is1POwned = true,
+                IsExtension = true
+            };
+            tfp.PolicyConstraints = policyConstraints;
+            
             var request = PolicyRestHelper.HttpGet(@"https://graph.microsoft.com/beta/applications?filter=startswith(displayName, 'b2c-extensions-app')");
             string response;
             ret = PolicyRestHelper.ExtractResponse(request, out response);
@@ -359,59 +254,19 @@ namespace AADB2C.CustomPolicy.Parser
             return ret;
         }
 
-        private string GetNameFromTemplate(string templateId)
-        {
-            bool keepTrying = true;
-            int i = 1;
-            var pid = Constants.PolicyPrefix + templateId;
-            if (PolicyIdsInTenant.ContainsKey(pid))
-            {
-                //this should do it
-                while (keepTrying)
-                {
-                    pid = Constants.PolicyPrefix + string.Format("{0}_", i) + templateId;
-
-                    if (!PolicyIdsInTenant.ContainsKey(pid)) keepTrying = false;
-
-                    if (i > 10)
-                        throw new InvalidDataException("tried 10 times generating  unique policyid, but failed hence giving up");
-
-                }
-            }
-            return pid;
-        }
-
-        private UserJourney GetJourney(string policyId)
-        {
-            var tfp = TemplateRPsInTenant[policyId];
-
-            var name = Constants.SupportedRPs[policyId];
-            return Array.Find<UserJourney>(tfp.UserJourneys, el => el.Id == name);
-        }
-
-        //public bool GetOutputClaims(string policyid, Dictionary<string, string> keyValuePairs)
-        //{
-        //    bool ret = false;
-        //    ClaimsSchemaClaimTypeReference outputClaims = new ClaimsSchemaClaimTypeReference();
-        //    outputClaims.
-
-        //    return ret;
-        //}
-
         public bool AddRelyingParty(string policyid, Dictionary<string, string> keyValuePairs)
         {
 
             bool ret = false;
             try
             {
-                var tfp = ObjectExtensions.Clone<TrustFrameworkPolicy>(TemplateRPsInTenant[policyid]);
+                var tfp = ObjectExtensions.Clone<TrustFrameworkPolicy>(TemplateRPs[policyid]);
                 tfp.TenantId = TenantId;
                 tfp.BasePolicy.TenantId = TenantId;
                 tfp.BasePolicy.PolicyId = TenantPolicyId;
                 tfp.PolicyId = GetNameFromTemplate(tfp.PolicyId);
                 tfp.PublicPolicyUri = "http://" + TenantId + "/" + tfp.PolicyId;
-                tfp.PolicyConstraints = new TrustFrameworkPolicyPolicyConstraints();
-                tfp.PolicyConstraints.Is1POwned = true;
+                tfp.PolicyConstraints = new TrustFrameworkPolicyPolicyConstraints { Is1POwned = true };
 
                 //add RP to PolicyIds in Tenant
                 PolicyIdsInTenant[tfp.PolicyId] = tfp;
@@ -445,39 +300,6 @@ namespace AADB2C.CustomPolicy.Parser
             return ret;
         }
 
-        private ClaimsProvider GetClaimsProviderFromTemplate(string name)
-        {
-            return Array.Find<ClaimsProvider>(TemplatePolicyExtensions.ClaimsProviders, el => el.TechnicalProfiles[0].Id == name);
-        }
-
-        public bool ClaimsProviderExistsInTenant(string tPId)
-        {
-            //we are assuming only 1 TP exists in the claims provider.
-            var exists = AllClaimProviders.Exists(cp => cp.TechnicalProfiles[0].Id == tPId);
-            //exists &= Array.Exists<ClaimsProvider>(PolicyIdsInTenant[TenantPolicyId].ClaimsProviders, el => el.TechnicalProfiles[0].Id == tPId);
-            return exists;
-        }
-
-        //callers get -1 if not found else returns index in CP
-        internal int GetTechnicalProfile(ClaimsProvider cp, string tpName, out TechnicalProfile tp)
-        {
-            int index = -1;
-            tp = null;
-            if (cp.TechnicalProfiles != null && !cp.TechnicalProfiles.IsNullOrEmpty())
-            {
-                index = 0;
-                for (; index < cp.TechnicalProfiles.Length; index++)
-                {
-                    if (tpName == cp.TechnicalProfiles[index].Id)
-                    {
-                        tp = cp.TechnicalProfiles[index];
-                        return index;
-                    }
-                    index++;
-                }
-            }
-            return index;
-        }
         public bool AddIdentityProvider(string idpName, Dictionary<string, string> keyValuePairs)
         {
             bool ret = true;
@@ -566,7 +388,7 @@ namespace AADB2C.CustomPolicy.Parser
                         cryptoKey.StorageReferenceId = keyValuePairs[item];
 
                     }
-                    else if(item == Constants.Secret)
+                    else if (item == Constants.Secret)
                     {
                         //clientsecretref must exist.
                         var id = keyValuePairs[Constants.ClientSecretRef];
@@ -626,8 +448,125 @@ namespace AADB2C.CustomPolicy.Parser
             return ret;
         }
 
+        private ClaimsProviderSelection GetClaimsProviderSelection(ClaimsProviderSelection[] cPS, string name)
+        {
+            foreach (var item in cPS)
+            {
+                if (item.TargetClaimsExchangeId == name || item.ValidationClaimsExchangeId == name)
+                    return item;
+            }
 
+            return null;
+        }
 
+        private ClaimsProvider GetClaimsProviderFromTemplate(string name)
+        {
+            return Array.Find<ClaimsProvider>(TemplatePolicyExtensions.ClaimsProviders, el => el.TechnicalProfiles[0].Id == name);
+        }
+
+        public bool ClaimsProviderExistsInTenant(string tPId)
+        {
+            //we are assuming only 1 TP exists in the claims provider.
+            var exists = AllClaimProviders.Exists(cp => cp.TechnicalProfiles[0].Id == tPId);
+            //exists &= Array.Exists<ClaimsProvider>(PolicyIdsInTenant[TenantPolicyId].ClaimsProviders, el => el.TechnicalProfiles[0].Id == tPId);
+            return exists;
+        }
+
+        //callers get -1 if not found else returns index in CP
+        internal int GetTechnicalProfile(ClaimsProvider cp, string tpName, out TechnicalProfile tp)
+        {
+            int index = -1;
+            tp = null;
+            if (cp.TechnicalProfiles != null && !cp.TechnicalProfiles.IsNullOrEmpty())
+            {
+                index = 0;
+                for (; index < cp.TechnicalProfiles.Length; index++)
+                {
+                    if (tpName == cp.TechnicalProfiles[index].Id)
+                    {
+                        tp = cp.TechnicalProfiles[index];
+                        return index;
+                    }
+                    index++;
+                }
+            }
+            return index;
+        }
+
+        public List<UserJourney> GetUserJourneys()
+        {
+            List<UserJourney> userJourneys = new List<UserJourney>();
+
+            foreach (var item in PolicyIdsInTenant.Values)
+            {
+                //policyconstraints should never be null;
+                if (item.PolicyConstraints.Is1POwned)
+                {
+                    var tfp = item;
+                    if (tfp.UserJourneys != null && tfp.UserJourneys.Length > 0)
+                    {
+                        userJourneys.AddRange(tfp.UserJourneys);
+                        Debug.WriteLine("for policy ID {0} found following user journeys - ", tfp.PolicyId);
+                        foreach (var item2 in tfp.UserJourneys)
+                        {
+                            Debug.Write("{0}  ", item2.Id);
+                        }
+                        Debug.WriteLine("");
+                    }
+                }
+            }
+
+            return userJourneys;
+        }
+
+        public List<ClaimsProvider> GetClaimsProviders()
+        {
+            List<ClaimsProvider> claimsProviders = new List<ClaimsProvider>();
+
+            foreach (var item in PolicyIdsInTenant.Values)
+            {
+                //policyconstraints should never be null;
+                if (item.PolicyConstraints.Is1POwned)
+                {
+                    var tfp = item;
+
+                    if (tfp.ClaimsProviders != null && tfp.ClaimsProviders.Length > 0)
+                    {
+                        claimsProviders.AddRange(tfp.ClaimsProviders);
+                        Debug.WriteLine("for policy ID {0} found following claim providers - ", tfp.PolicyId);
+                        foreach (var item2 in tfp.ClaimsProviders)
+                        {
+                            Debug.Write("{0}  ", item2.DisplayName);
+                        }
+                        Debug.WriteLine("");
+                    }
+                }
+            }
+
+            return claimsProviders;
+        }
+
+        private string GetNameFromTemplate(string templateId)
+        {
+            bool keepTrying = true;
+            int i = 1;
+            var pid = Constants.PolicyPrefix + templateId;
+            if (PolicyIdsInTenant.ContainsKey(pid))
+            {
+                //this should do it
+                while (keepTrying)
+                {
+                    pid = Constants.PolicyPrefix + string.Format("{0}_", i) + templateId;
+
+                    if (!PolicyIdsInTenant.ContainsKey(pid)) keepTrying = false;
+
+                    if (i > 10)
+                        throw new InvalidDataException("tried 10 times generating  unique policyid, but failed hence giving up");
+
+                }
+            }
+            return pid;
+        }
 
     }
 

@@ -31,18 +31,21 @@ namespace AADB2C.CustomPolicy.Parser
             serializer.UnknownElement += UnknownElement;
             using (TextReader reader = new StringReader(xml))
             {
-                //XDocument doc = XDocument.Load(reader);
+                //todo: validation needs to be uncommented, but work needs to be done manage the erros
+                /*
+                XDocument doc = XDocument.Load(reader);
 
-                //string msg = "";
-                //var errors = false;
-                //doc.Validate(schemas, (o, err) =>
-                //{
-                //    msg = err.Message;
-                //    Debug.WriteLine(msg == "" ? "Document is valid" : "Document invalid: " + msg);
-                //    errors = true;
-                //});
-                //if (!errors)
-                //{
+                string msg = "";
+                var errors = false;
+                doc.Validate(schemas, (o, err) =>
+                {
+                    msg = err.Message;
+                    Debug.WriteLine(msg == "" ? "Document is valid" : "Document invalid: " + msg);
+                    errors = true;
+                });
+                if (!errors)
+                {
+                */
                 tfPolicy = (TrustFrameworkPolicy)serializer.Deserialize(reader);
                 Debug.WriteLine("finished ConvertXmlToTFP {0}", tfPolicy.PolicyId);
                 //}
@@ -154,7 +157,7 @@ namespace AADB2C.CustomPolicy.Parser
                     }
                     else
                     {
-                        Parser.TemplateRPsInTenant[tfp.PolicyId] = tfp;
+                        Parser.TemplateRPs[tfp.PolicyId] = tfp;
                     }
                 }
             }
